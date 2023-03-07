@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>xlsx-populate Browser Demo</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-132690304-1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx-populate/1.21.0/xlsx-populate.min.js"
+        integrity="sha512-JVBz6zJ6cvcRjn7GayGJ/dsfYmykXq/O+BG5jqvCotbSkRd7pD/k0q/wqoIKEgXTh9lBxWoInk0DgrDhpXc9JA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'UA-132690304-1');
+    </script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Merge xlsx files</h1>
+        </div>
+
+        <b>Source:</b>
+        <div id="inputs">
+            <div class="radio">
+                <input id="file-input" type="file" style="display: inline" class="inputs"
+                    accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+            </div>
+
+            <div class="radio">
+                <input id="file-input2" type="file" style="display: inline" class="inputs"
+                    accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="parseExcelFile2()">Merge</button>
+    </div>
+    <button onclick="addInput()"> Add another excel</button>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"
+        integrity="sha512-UnrKxsCMN9hFk7M56t4I4ckB4N/2HHi0w/7+B/1JsXIX3DmyBcsGpT3/BsuZMZf+6mAr0vP81syWtfynHJ69JA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- use version 0.19.2 -->
+    <script lang="javascript" src="https://cdn.sheetjs.com/xlsx-0.19.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script
+        src="https://cdn.rawgit.com/eligrey/FileSaver.js/5ed507ef8aa53d8ecfea96d96bc7214cd2476fd2/FileSaver.min.js"></script>
+
+    <script type="text/javascript">
+        function addInput() {
+            var x = document.createElement("INPUT");
+            x.setAttribute("type", "file");
+            x.setAttribute("name", "textInput");
+            x.setAttribute("value", "You Just added a text field");
+            x.setAttribute("class", "inputs")
+            document.getElementById("inputs").appendChild(x)
+        }
+
+        async function parseExcelFile2() {
+            var inputElements = document.getElementsByClassName("inputs")
+            inputElements.item
+            var files = []
+            for (let i = 0; i < inputElements.length; i++) {
+                var files1 = inputElements[i].files || [];
+                if (!files1.length) return;
+                var file = files1[0];
+                files.push(file)
+            }
+            mergeExcel(files)
+        }
+
+        async function mergeExcel(files) {
+            let finalWorkbook = new ExcelJS.Workbook()
+            let finalWorksheet = finalWorkbook.addWorksheet("Clients")
+
+            var workbook = await new ExcelJS.Workbook()
+            let reader = await new FileReader();
+            await reader.readAsArrayBuffer(files[0])
+            reader.onload = async () => {
+                const buffer = await reader.result;
+                await workbook.xlsx.load(buffer).then(async workbook => {
+                    console.log(workbook, 'workbook instance')
+                    workbook.eachSheet((sheet, id) => {
+                        sheet.eachRow((row, rowIndex) => {
+                            finalWorksheet.addRow(row.values)
+                        })
+                    })
+                })
+            }
+
+            for (let index = 1; index < files.length; index++) {
+                console.log("object");
+                const element = files[index];
+                let workbook = new ExcelJS.Workbook()
+                let reader = new FileReader();
+                await reader.readAsArrayBuffer(element)
+                reader.onload = async () => {
+                    const buffer = reader.result;
+                    console.log(buffer);
+                    await workbook.xlsx.load(buffer).then(async workbook => {
+                        workbook.eachSheet((sheet, id) => {
+                            sheet.eachRow((row, rowIndex) => {
+                                console.log(rowIndex)
+                                if (rowIndex != 1) {
+                                    finalWorksheet.addRow(row.values)
+                                }
+                                else {
+                                    console.log(row.values);
+                                }
+                            })
+                        })
+                        if (index == files.length - 1) {
+                            finalWorkbook.xlsx.writeBuffer().then(function (xls64) {
+                                const blob = new Blob([xls64], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8' });
+                                saveAs(blob, 'export.xlsx');
+                            })
+                        }
+                    })
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
